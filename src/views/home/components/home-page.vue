@@ -3,25 +3,36 @@
     <div class="banner-box">
       <div class="job-card">
         <el-popover
-          class="job-card-content"
-          placement="right"
-          width="400"
+          :class="['job-card-content', flag == index ? 'ishover' : '']"
+          placement="right-start"
+          width="500"
           trigger="hover"
           :close-delay="0"
-          v-for="index in 8"
+          v-for="(item, index) in s_typeList"
           :key="index"
-          @mouseover.native="flag = index"
+          @show="flag = index"
+          @hide="flag = ''"
         >
           <ul slot="reference">
-            <li>技术</li>
-            <li>Java</li>
-            <li>PHP</li>
-            <li>web前端</li>
-            <li>算法工程师</li>
+            <li>{{ item.p_type }}</li>
+            <li v-for="(tItem,tIndex) in item.content[0].s_type" :key="tIndex" v-show="tIndex < 3">{{tItem}}</li>
             <li><i class="el-icon-arrow-right"></i></li>
           </ul>
-          <div>
-            <div class="unfold">sdgds</div>
+          <div class="unfold">
+            <h4>{{ item.p_type }}</h4>
+            <div
+              class="unfold-content"
+              v-for="(pItem, pIndex) in item.content"
+              :key="pIndex"
+            >
+              <span class="unfold-title">{{ pItem.summary }}</span>
+              <ul>
+                <li v-for="(sItem, sIndex) in pItem.s_type" :key="sIndex" @click="searchJob(sItem)">
+                  {{ sItem }}
+                </li>
+                <el-divider></el-divider>
+              </ul>
+            </div>
           </div>
         </el-popover>
       </div>
@@ -31,89 +42,166 @@
       </div>
       <el-divider>热招职位</el-divider>
       <div class="recommend-card">
-        <div class="job-sort">
-          <el-menu
-            :default-active="activeIndex"
-            class="el-menu-demo"
-            mode="horizontal"
-            @select="handleSelect"
-          >
-            <el-menu-item
-              v-for="(item, index) in jobList"
-              :key="index"
-              :index="index.toString()"
-              >{{ item }}</el-menu-item
-            >
-          </el-menu>
-        </div>
         <div class="job-sort-content">
-          <div class="job-sort-card" v-for="index in 9" :key="index">
+          <div
+            class="job-sort-card"
+            v-for="(item, index) in hotJobList"
+            :key="index"
+            @click="toJumpWeb(item)"
+          >
             <div class="job-name">
-              <span class="job-title">中国区-前端工程师</span>
-              <span>15-30K·14薪</span>
+              <span class="job-title">{{ item.job_name }}</span>
+              <span>{{ item.salary }}</span>
             </div>
             <ul class="job-requirement">
-              <li>北京</li>
-              <li>经验不限</li>
-              <li>本科</li>
+              <li>{{ item.location }}</li>
+              <li>{{ item.experience }}</li>
+              <li>{{ item.eduction }}</li>
             </ul>
             <span class="line"></span>
             <div class="company">
               <div class="company-logo">
                 <img src="../../../assets/images/xiaomi.png" alt="" />
               </div>
-              <span class="company-name">小米</span>
+              <span class="company-name">{{ item.com_name }}</span>
               <ul class="company-info">
-                <li>互联网</li>
-                <li>已上市</li>
+                <li>{{ item.financing }}</li>
+                <li>{{ item.personNum }}</li>
               </ul>
             </div>
           </div>
         </div>
       </div>
-      <div class="watchMore"><button>查看更多</button></div>
+      <div class="watchMore" @click="toAllJob"><button>查看更多</button></div>
       <el-divider>热门企业</el-divider>
       <div class="hot-company">
-        <div class="hot-company-content" v-for="index in 8" :key="index">
+        <div
+          class="hot-company-content"
+          v-for="(item, index) in hotCompanyList"
+          :key="index"
+          @click="toCompanyDetails(item)"
+        >
           <div class="logo">
             <img src="../../../assets/images/xiaomi.png" alt="" />
           </div>
-          <span class="company-name">小米</span>
+          <span class="company-name">{{ item.companyName }}</span>
           <div class="intro">
-            <span>不需要融资</span>
+            <span>{{ item.financing }}</span>
             <span> | </span>
-            <span>互联网金融</span>
+            <span>{{ item.nature }}</span>
           </div>
-          <button>100个热招职位</button>
         </div>
       </div>
-      <div class="watchMore"><button>查看更多</button></div>
+      <div class="watchMore" @click="toAllCompany">
+        <button @click="toAllCompany">查看更多</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import { getHotJobInfo, getHotCompanyInfo, getJobTypeList } from "@/apis/index";
 export default {
   data() {
     return {
-      activeIndex: "",
-      jobList: [
-        "IT·互联网",
-        "教育培训",
-        "法律咨询",
-        "市场专员",
-        "销售经理",
-        "新媒体运营",
-        "物流管理",
-      ],
       flag: "",
+      hotJobList: [], // 热门职位列表
+      hotCompanyList: [], // 热门公司列表
+      p_typeList: [
+        {
+          p_type: "",
+          content: [
+            {
+              summary: "",
+              s_type: [],
+            },
+          ],
+        },
+      ],
+      s_typeList: [],
+      arr: [],
     };
   },
   created() {
-    this.activeIndex = this.jobList[0];
+    this.getJobType();
+  },
+  mounted() {
+    this.getList();
+    this.getCompanyInfo();
   },
   methods: {
-    handleSelect() {},
+    searchJob(item) {
+      this.$router.push({path:"/index/alljob",query:{job_name: item}})
+    },
+    toJumpWeb(item) {
+      this.$router.push({
+        path: "/job/details",
+        query: { jobInfo: JSON.stringify(item) },
+      });
+    },
+    toCompanyDetails(item) {
+      this.$router.push({
+        path: "/company/details",
+        query: { companyInfo: JSON.stringify(item) },
+      });
+    },
+    toAllJob() {
+      this.$router.push("/index/alljob");
+    },
+    toAllCompany() {
+      this.$router.push("/index/allcompany");
+    },
+    async getJobType() {
+      const { data: res } = await getJobTypeList();
+      if (res.code == 200) {
+        this.arr = res.data.list;
+        for (let i = 0, j = 0; i < this.arr.length; i++) {
+          this.p_typeList[0].p_type = this.arr[0].p_type;
+          if (this.p_typeList[j].p_type == this.arr[i].p_type) {
+            this.p_typeList[j].p_type = this.arr[i].p_type;
+            this.p_typeList[j].content[i].summary = this.arr[i].summary;
+            this.p_typeList[j].content[i].s_type = this.arr[i].s_type.split(
+              ","
+            );
+            this.p_typeList[j].content[i + 1] = [
+              {
+                summary: "",
+                s_type: [],
+              },
+            ];
+          } else {
+            this.p_typeList[j].content = this.p_typeList[j].content.slice(0,this.p_typeList[j].content.length - 1)
+            this.s_typeList.push(this.p_typeList[j]);
+            this.p_typeList = [
+              {
+                p_type: "",
+                content: [
+                  {
+                    summary: "",
+                    s_type: [],
+                  },
+                ],
+              },
+            ];
+            this.arr = this.arr.slice(i, this.arr.length);
+            i = -1;
+          }
+        }
+        return this.s_typeList;
+      }
+    },
+    async getList() {
+      const { data: res } = await getHotJobInfo();
+      if (res.code == 200) {
+        this.hotJobList = res.data.list;
+      }
+    },
+    async getCompanyInfo() {
+      const { data: res } = await getHotCompanyInfo();
+      if (res.code == 200) {
+        this.hotCompanyList = res.data.list;
+      }
+    },
   },
 };
 </script>
@@ -140,6 +228,38 @@ export default {
     }
   }
 }
+.el-popover {
+  margin-left: 0 !important;
+  .popper__arrow {
+    display: none !important;
+  }
+  .unfold {
+    h4 {
+      margin-top: 0;
+    }
+    .unfold-content {
+      @extend %row;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      ul {
+        width: 400px;
+        font-size: 14px;
+        color: rgb(141, 146, 161);
+        li {
+          margin: 0 20px 10px 0;
+        }
+        li:hover {
+          color: rgb(255, 81, 0);
+        }
+      }
+      .el-divider--horizontal {
+        margin-top: 0;
+        opacity: 0.3;
+      }
+    }
+  }
+}
 </style>
 
 <style lang="scss" scoped>
@@ -148,15 +268,11 @@ export default {
   flex-wrap: wrap;
   margin: 30px auto;
   width: 1200px;
-  font-size: 14px;
-  font-weight: 400;
-  font-family: PingFangSC-Regular, PingFang SC;
-  color: rgb(141, 146, 161);
   .job-card {
     @extend %col;
     justify-content: flex-start;
     width: 35%;
-    height: 400px;
+    height: 350px;
     background-color: #fff;
     box-shadow: 2px 2px #9991;
     .job-card-content {
@@ -180,11 +296,8 @@ export default {
           cursor: auto;
         }
       }
-      .unfold {
-        color: red !important;
-      }
     }
-    .job-card-content:hover {
+    .ishover {
       ul {
         color: #fff;
       }
@@ -194,7 +307,7 @@ export default {
   .ad-card {
     position: relative;
     width: 62%;
-    height: 400px;
+    height: 350px;
     background-color: #fff;
     box-shadow: 2px 2px #9991;
     span {
@@ -215,22 +328,20 @@ export default {
   }
   .recommend-card {
     width: 100%;
-    height: 530px;
+    height: 466px;
     background-color: #fff;
     box-shadow: 2px 2px #9991;
     .job-sort {
       width: 100%;
     }
     .job-sort-content {
-      @extend %row;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-gap: 20px;
       width: 100%;
-      height: 400px;
       .job-sort-card {
         cursor: pointer;
         @extend %col;
-        margin-top: 10px;
-        width: 32%;
         height: 140px;
         border: 1px solid rgba(76, 109, 98, 0.067);
         box-shadow: 2px 2px #9991;
@@ -296,8 +407,9 @@ export default {
     }
   }
   .hot-company {
-    @extend %row;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 20px;
     width: 100%;
     height: 510px;
     background-color: #fff;
@@ -305,7 +417,6 @@ export default {
     .hot-company-content {
       @extend %col;
       justify-content: space-around;
-      width: 284px;
       height: 238px;
       border: 1px solid rgba(76, 109, 98, 0.067);
       cursor: pointer;
@@ -327,19 +438,6 @@ export default {
         & > span:nth-child(2) {
           margin: 0 5px;
         }
-      }
-      button {
-        margin-bottom: 20px;
-        width: 180px;
-        height: 35px;
-        background-color: #fff;
-        border: 1px solid rgba(53, 65, 61, 0.067);
-        cursor: pointer;
-        outline-style: none;
-      }
-      button:hover {
-        color: rgb(0, 179, 138);
-        border-color: rgb(0, 179, 138);
       }
     }
     .hot-company-content:hover {

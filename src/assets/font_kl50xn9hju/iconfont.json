@@ -1,0 +1,58 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "14513759",
+      "name": "小火箭-b",
+      "font_class": "xiaohuojian-b",
+      "unicode": "e61a",
+      "unicode_decimal": 58906
+    },
+    {
+      "icon_id": "18857538",
+      "name": "客户",
+      "font_class": "weibiaoti-4",
+      "unicode": "e60d",
+      "unicode_decimal": 58893
+    },
+    {
+      "icon_id": "18858887",
+      "name": "货品",
+      "font_class": "weibiaoti-41",
+      "unicode": "e611",
+      "unicode_decimal": 58897
+    },
+    {
+      "icon_id": "18859559",
+      "name": "数据分析",
+      "font_class": "weibiaoti-5",
+      "unicode": "e614",
+      "unicode_decimal": 58900
+    },
+    {
+      "icon_id": "18859870",
+      "name": "档案",
+      "font_class": "weibiaoti-51",
+      "unicode": "e615",
+      "unicode_decimal": 58901
+    },
+    {
+      "icon_id": "18860007",
+      "name": "绩效",
+      "font_class": "weibiaoti-52",
+      "unicode": "e616",
+      "unicode_decimal": 58902
+    },
+    {
+      "icon_id": "18867731",
+      "name": "平台管理",
+      "font_class": "weibiaoti-1",
+      "unicode": "e620",
+      "unicode_decimal": 58912
+    }
+  ]
+}

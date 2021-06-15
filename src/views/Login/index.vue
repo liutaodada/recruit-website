@@ -38,7 +38,7 @@ export default {
 <style lang="scss" scoped>
 .login-box {
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
   .bg {
     position: absolute;
     top: 0;

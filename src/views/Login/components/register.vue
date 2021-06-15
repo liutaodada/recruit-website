@@ -8,7 +8,7 @@
         我要应聘
       </button>
       <button @click="changeType('boss')" :class="chooseNum == 1 ? 'cur' : ''">
-        我要招聘
+        我要招人
       </button>
     </div>
     <el-form
@@ -24,6 +24,7 @@
           placeholder="请输入邮箱"
           prefix-icon="el-icon-message"
         ></el-input>
+        <span class="codeBtn" @click="sendCode">{{ codeBtn }}</span>
       </el-form-item>
       <el-form-item prop="code">
         <el-input
@@ -48,11 +49,11 @@
           autocomplete="off"
         ></el-input>
       </el-form-item>
-      <el-form-item prop="passwd">
+      <el-form-item prop="confirmpasswd">
         <el-input
           prefix-icon="el-icon-lock"
           type="password"
-          v-model="registerRuleForm.passwd"
+          v-model="registerRuleForm.confirmpasswd"
           placeholder="确认密码"
           autocomplete="off"
         ></el-input>
@@ -78,14 +79,47 @@
 </template>
 
 <script>
+import { Register, sendCodeInfo } from "@/apis/login";
+import $ from "jquery";
 export default {
   data() {
+    var validatePass = (rule, value, callback) => {
+      if (value === "") {
+        callback(new Error("请输入密码"));
+      } else {
+        if (this.registerRuleForm.passwd !== "") {
+          this.$refs.registerRuleForm.validateField("confirmpasswd");
+        }
+        callback();
+      }
+    };
+    var validatePass2 = (rule, value, callback) => {
+      if (value === "") {
+        callback(new Error("请再次输入密码"));
+      } else if (value !== this.registerRuleForm.passwd) {
+        callback(new Error("两次输入密码不一致!"));
+      } else {
+        callback();
+      }
+    };
     return {
       registerRuleForm: {
-        passwd: "",
+        email: "",
+        code: "",
         username: "",
+        passwd: "",
+        confirmpasswd: "",
       },
       registerRules: {
+        email: [
+          { required: true, message: "请输入邮箱地址", trigger: "blur" },
+          {
+            type: "email",
+            message: "请输入正确的邮箱地址",
+            trigger: ["blur", "change"],
+          },
+        ],
+        code: [{ required: true, message: "请输入验证码", trigger: "blur" }],
         username: [
           { required: true, message: "用户名不能为空", trigger: "blur" },
           {
@@ -95,24 +129,55 @@ export default {
             trigger: "blur",
           },
         ],
-        passwd: [
-          { required: true, message: "密码不能为空", trigger: "blur" },
-          {
-            min: 3,
-            max: 10,
-            message: "长度在 3 到 10 个字符",
-            trigger: "blur",
-          },
-        ],
+        passwd: [{ validator: validatePass, trigger: "blur" }],
+        confirmpasswd: [{ validator: validatePass2, trigger: "blur" }],
       },
       chooseNum: 0,
+      codeBtn: "发送验证码",
+      times: 60,
     };
   },
   methods: {
+    async sendCode() {
+      if (this.registerRuleForm.email == "") {
+        return this.$message.error("请输入邮箱地址");
+      }
+      const { data: res } = await sendCodeInfo({
+        email: this.registerRuleForm.email,
+      });
+      if (res.code == 200) {
+        this.times = 60;
+        $(".codeBtn").css("pointer-events", "none");
+        var code_clock = window.setInterval(() => {
+          this.times -= 1;
+          if (this.times <= 0) {
+            window.clearInterval(code_clock);
+            $(".codeBtn").css("pointer-events", "auto");
+            return (this.codeBtn = "重新发送");
+          }
+          this.codeBtn = "已发送 " + this.times + "s";
+        }, 1000);
+      }
+    },
     toRegister(formName) {
-      this.$refs[formName].validate((valid) => {
+      var qs = require("qs");
+      this.$refs[formName].validate(async (valid) => {
         if (valid) {
-          this.$message.success("登录成功");
+          const obj = {
+            email: this.registerRuleForm.email,
+            code: this.registerRuleForm.code,
+            username: this.registerRuleForm.username,
+            passwd: this.registerRuleForm.passwd,
+            userType: this.chooseNum,
+          };
+          const { data: res } = await Register(qs.stringify(obj));
+          if (res.code == 200) {
+            this.$message.success("注册成功，请登录");
+            this.isRegister();
+          }
+          if (res.code == 204) {
+            this.$message.error(res.message);
+          }
         } else {
           this.$message.error("用户名或密码错误，请检查无误后重试");
           return false;
@@ -136,14 +201,17 @@ export default {
 
 <style lang="scss">
 .demo-ruleForm {
-  width: 80%;
+  width: 90%;
   .el-form-item {
     .el-form-item__content {
-      margin-left: 70px !important;
+      margin-left: 90px !important;
     }
   }
+  .el-input {
+    width: 75%;
+  }
   .el-input__inner {
-    width: 80%;
+    width: 100%;
   }
   .el-input__inner:focus {
     border-color: rgb(173, 233, 196);
@@ -155,10 +223,15 @@ export default {
 .banner-demo {
   @extend %col;
   justify-content: flex-start;
+  margin-top: 40px;
   width: 500px;
   background-color: rgb(255, 255, 255);
   border-radius: 8px;
   opacity: 0.85;
+  .codeBtn {
+    margin-left: 5px;
+    cursor: pointer;
+  }
   .type-btn {
     button {
       margin: 10px 10px 0 10px;
@@ -194,7 +267,7 @@ export default {
     }
     .btn {
       margin-top: 10px;
-      width: 80%;
+      width: 75%;
       text-align: center;
       font-size: 16px;
       border: none;
