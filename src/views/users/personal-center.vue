@@ -84,7 +84,7 @@ export default {
     return {
       activeIndex: "1",
       username: "",
-      imageUrl: require("C:/Users/yindun/Desktop/personal-project/express-demo/public/夕阳.jpg"),
+      imageUrl: require("@/assets/images/夕阳.jpg"),
       jobInfo: "", // 职业信息
       intro: "", // 个人介绍
       sex: 0, // 性别
